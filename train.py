@@ -36,7 +36,7 @@ def train(
     batch_size,
     scheduler,
 ):
-    batch_size_data = len(X) // (len(X_pde) // batch_size)
+    batch_size_data = 5000
     nb_it_tot = nb_itt + len(train_loss["total"])
     print(
         f"--------------------------\nStarting at epoch: {len(train_loss['total'])}"
@@ -76,10 +76,10 @@ def train(
             )
 
             # loss des points de data
-            X_batch = X[batch * batch_size_data : (batch + 1) * batch_size_data, :]
-            U_batch = U[batch * batch_size_data : (batch + 1) * batch_size_data, :]
-            pred_data = model(X_batch)
-            loss_data = loss(U_batch, pred_data)  # (MSE)
+            # X_batch = X[(batch * batch_size_data)%(len(X)-2*batch_size_data) : ((batch + 1) * batch_size_data)%(len(X)-batch_size_data), :]
+            # U_batch = U[(batch * batch_size_data)%(len(X)-2*batch_size_data) : ((batch + 1) * batch_size_data)%(len(X)-batch_size_data), :]
+            pred_data = model(X)
+            loss_data = loss(U, pred_data)  # (MSE)
 
             # loss totale
             loss_totale = poids[0] * loss_data + poids[1] * loss_pde

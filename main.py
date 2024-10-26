@@ -18,7 +18,7 @@ time_start = time.time()
 
 ############# LES VARIABLES ################
 
-folder_result = "1_first_fonctionne"  # le nom du dossier de résultat
+folder_result = "3_uniform"  # le nom du dossier de résultat
 
 random_seed_train = None
 # la seed de test, toujours garder la même pour pouvoir comparer
@@ -26,19 +26,19 @@ random_seed_test = 2002
 
 
 ##### Le modèle de résolution de l'équation de la chaleur
-nb_itt = 3000  # le nb d'epoch
-save_rate = 300
+nb_itt = 2800  # le nb d'epoch
+save_rate = 50
 poids = [1, 1]  # les poids pour la loss
 
 batch_size = 5000  # la taille d'un batch
 # batch_size_pde = 1  # le nb de points pour la pde ### Pour l'instant on prend la même taille
 
-n_pde = 10000
+n_pde = 1000000
 
 n_data_test = 5000
 n_pde_test = 5000
 
-Re = 3900
+Re = 100
 
 lr = 1e-3
 
@@ -81,19 +81,38 @@ v_norm_full = (v_full - v_full.mean()) / v_full.std()
 
 X_full = np.array([x_norm_full, y_norm_full, t_norm_full], dtype=np.float32).T
 U_full = np.array([u_norm_full, v_norm_full, p_norm_full], dtype=np.float32).T
-np.random.shuffle(X_full)  # pour pouvoir prendre des éléments au pif
+
+# points_coloc = np.random.choice(len(X_full), len(X_full), replace=False)
+# X_full = X_full[points_coloc]
+# U_full = U_full[points_coloc]
 
 # On divise en un certain nombre de points
-masque = X_full[:, 2] == np.unique(t_norm_full)[23]
-X_full[masque].shape
-couple_x_y = [(x, y) for x, y in X_full[masque][:, :2]]
-couple_x_y_reduce = couple_x_y[:80]
-masque_reduce = np.isin(X_full[:, :2], couple_x_y_reduce).all(axis=1)
-X_reduce = X_full[masque_reduce]
-U_reduce = U_full[masque_reduce]
+# points_coloc = np.random.choice(len(X_full), len(X_full), replace=False)
+# X_full = X_full[points_coloc]
+# U_full = U_full[points_coloc]
 
-X = torch.from_numpy(X_reduce).requires_grad_().to(device)
-U = torch.from_numpy(U_reduce).requires_grad_().to(device)
+# points_coloc_reduce = np.random.choice(len(X_full), 6000, replace=False)
+# X_reduce = X_full[points_coloc_reduce]
+# U_reduce = U_full[points_coloc_reduce]
+
+x_int = np.linspace(x_norm_full.min(), x_norm_full.max(), 8)
+y_int = np.linspace(y_norm_full.min(), y_norm_full.max(), 8)
+X_reduce = np.zeros((0,3))
+U_reduce = np.zeros((0,3))
+for time in np.unique(X_full[:,2]):
+    for x_ in x_int :
+        for y_ in y_int :
+            masque_time = X_full[:,2]==time
+            distances = np.linalg.norm(X_full[masque_time][:,:2] - np.array([x_,y_], dtype=np.float32), axis=1)
+            index_min = np.argmin(distances)
+            point_proche = X_full[masque_time][index_min]
+            sol_proche = U_full[masque_time][index_min]
+            X_reduce = np.concatenate((X_reduce, point_proche.reshape(-1,3)))
+            U_reduce = np.concatenate((U_reduce, sol_proche.reshape(-1,3)))
+
+X = torch.from_numpy(X_reduce).requires_grad_().to(torch.float32).to(device)
+U = torch.from_numpy(U_reduce).requires_grad_().to(torch.float32).to(device)
+
 
 t_norm_min = t_norm_full.min()
 t_norm_max = t_norm_full.max()

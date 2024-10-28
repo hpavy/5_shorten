@@ -18,7 +18,7 @@ time_start = time.time()
 
 ############# LES VARIABLES ################
 
-folder_result = "3_uniform"  # le nom du dossier de résultat
+folder_result = "4_turb_first"  # le nom du dossier de résultat
 
 random_seed_train = None
 # la seed de test, toujours garder la même pour pouvoir comparer
@@ -52,7 +52,8 @@ gamma_scheduler = 0.999
 # On adimensionne la data
 df = pd.read_csv("data.csv")
 df_modified = df[
-    (df["Points:0"] >= 0.22)
+    (df["Points:0"] >= 0.015)
+    & (df["Points:0"] <= 0.2)
     & (df["Points:1"] >= -0.1)
     & (df["Points:1"] <= 0.1)
     & (df["Time"] > 4)
